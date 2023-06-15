@@ -1,5 +1,4 @@
 package com.mongodb.sentiment;
-import com.google.gson.JsonObject;
 import net.dean.jraw.RedditClient;
 import net.dean.jraw.http.UserAgent;
 import net.dean.jraw.models.Comment;
@@ -15,9 +14,8 @@ import net.dean.jraw.models.PublicContribution;
 import com.google.common.hash.Hashing;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
-import com.google.gson.JsonArray;
 import org.bson.Document;
-
+import java.time.Instant;
 import org.apache.kafka.clients.producer.KafkaProducer;
 import org.apache.kafka.clients.producer.Producer;
 import org.apache.kafka.clients.producer.ProducerRecord;
@@ -39,7 +37,7 @@ public class RedditPostsToKafka {
         Properties props = new Properties();
         props.put("bootstrap.servers", "pkc-ymrq7.us-east-2.aws.confluent.cloud:9092"); // replace <cluster-id> with your Confluent Cloud cluster ID
         props.put("security.protocol", "SASL_SSL");
-        props.put("sasl.jaas.config", "org.apache.kafka.common.security.plain.PlainLoginModule required username='QOSOV73O2FDYWCGF' password='0ikMRHijAAdALwPnMsnzLMZl4n4REp4RicqatG8rBSQyd8TaGXJ0L0LwAJFVTxqn';"); // replace <api-key> and <api-secret> with your Confluent Cloud API key and secret
+        props.put("sasl.jaas.config", "org.apache.kafka.common.security.plain.PlainLoginModule required username='RP7QF5PFXXVPARTC' password='YXXUl+ia6nrxN9H75Cr5A2w9fuGMPccQlYyRskzb0T+4fEtlp4RBjoA0Y365HE1G';"); // replace <api-key> and <api-secret> with your Confluent Cloud API key and secret
         props.put("sasl.mechanism", "PLAIN");
         props.put("ssl.endpoint.identification.algorithm", "https");
         props.put("acks", "all");
@@ -48,9 +46,9 @@ public class RedditPostsToKafka {
         props.put("linger.ms", 1);
         props.put("buffer.memory", 33554432);
         props.put("key.serializer", "org.apache.kafka.common.serialization.StringSerializer");
-        props.put("value.serializer", "org.apache.kafka.common.serialization.StringSerializer");
+        props.put("value.serializer", "org.apache.kafka.common.serialization.ByteArraySerializer");
 
-        Producer<String, String> kafkaProducer = new KafkaProducer<>(props);
+        Producer<String, byte[]> kafkaProducer = new KafkaProducer<>(props);
         // Define the subreddit you want to fetch posts from
         String subredditName = "mongodb";
 
@@ -64,7 +62,7 @@ public class RedditPostsToKafka {
         }, 0, 60 * 1000);
     }
 
-    public static void fetchNewPostsAndComments(RedditClient redditClient, String subredditName, Producer<String, String> kafkaProducer) {
+    public static void fetchNewPostsAndComments(RedditClient redditClient, String subredditName, Producer<String, byte[]> kafkaProducer) {
         // Fetch new posts from the specified subreddit
         DefaultPaginator<Submission> paginator = redditClient.subreddit(subredditName).posts().sorting(SubredditSort.NEW).limit(50).build();
 
@@ -73,32 +71,28 @@ public class RedditPostsToKafka {
             // Create a unique identifier for the post
             String postHash = Hashing.sha256().hashString(post.getTitle() + post.getAuthor(), StandardCharsets.UTF_8).toString();
 
-            // Create a new JSON document for the post and its comments
-            JsonObject postJson = new JsonObject();
-            postJson.addProperty("id", post.getId());
-            postJson.addProperty("title", post.getTitle());
-            postJson.addProperty("author", post.getAuthor());
-            postJson.addProperty("score", post.getScore());
-            postJson.addProperty("permalink", post.getPermalink());
-            postJson.addProperty("url", post.getUrl());
-            postJson.addProperty("description", post.getSelfText());
-            postJson.addProperty("created", post.getCreated().getTime());
+            // Create a new BSON document for the post and its comments
+            Document postDoc = new Document();
+            postDoc.append("id", post.getId());
+            postDoc.append("title", post.getTitle());
+            postDoc.append("author", post.getAuthor());
+            postDoc.append("score", post.getScore());
+            postDoc.append("permalink", post.getPermalink());
+            postDoc.append("url", post.getUrl());
+            postDoc.append("description", post.getSelfText());
+            postDoc.append("created", Date.from(Instant.ofEpochSecond(post.getCreated().getSeconds())));
 
-            JsonArray commentsJson = new JsonArray();
+            List<Document> comments = new ArrayList<>();
             for (Document comment : getCommentsAsDocuments(redditClient, post.getId())) {
-                JsonObject commentJson = new JsonObject();
-                commentJson.addProperty("id", comment.getString("id"));
-                commentJson.addProperty("author", comment.getString("author"));
-                commentJson.addProperty("body", comment.getString("body"));
-                commentJson.addProperty("score", comment.getInteger("score"));
-                commentJson.addProperty("created", comment.getLong("created"));
-                commentsJson.add(commentJson);
+                comments.add(comment);
             }
-            postJson.add("comments", commentsJson);
+            postDoc.append("comments", comments);
 
-            // Convert the JSON document to a string and send it to the Kafka topic
-            String postJsonString = postJson.toString();
-            kafkaProducer.send(new ProducerRecord<String, String>("reddit_posts_topic", postHash, postJsonString));
+            // Convert Document to bytes
+            byte[] postDocBytes = postDoc.toJson().getBytes(StandardCharsets.UTF_8);
+
+            // Send the BSON document to Kafka
+            kafkaProducer.send(new ProducerRecord<>("topic_5", postHash, postDocBytes));
 
             System.out.println("Stored post and comments: " + post.getTitle());
         }
@@ -124,12 +118,11 @@ public class RedditPostsToKafka {
                         .append("author", comment.getAuthor())
                         .append("body", comment.getBody())
                         .append("score", comment.getScore())
-                        .append("created", comment.getCreated().getTime());
+                        .append("created", new Date(comment.getCreated().getTime()));
                 comments.add(commentDoc);
             }
         }
 
         return comments;
     }
-
 }
