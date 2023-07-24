@@ -15,7 +15,6 @@ The objective of these enhancements is to perform a more comprehensive analysis 
 ## Prerequisites
 
 - A Reddit account
-- A StackOverflow account with API Key
 - A MongoDB Atlas account
 - A Kafka Confluent Cloud account
 - A Databricks account
@@ -27,6 +26,7 @@ The objective of these enhancements is to perform a more comprehensive analysis 
 3. Create a Kafka Connector to MongoDB Atlas
 4. Configure the Kafka Connector
 5. Update the Databricks script to run in near real-time
+6. Visualize the results using MongoDB Atlas Chart
 
 ## Detailed Steps
 
