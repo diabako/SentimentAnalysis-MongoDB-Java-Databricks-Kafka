@@ -1,6 +1,5 @@
 import pymongo
 import pandas as pd
-import numpy as np
 from pymongo import MongoClient
 from textblob import TextBlob
 import time
@@ -9,59 +8,79 @@ import time
 dbname = 'dbname'
 collectionname = 'collectionname'
 sentiment_collectionname = 'sentiment_collectionname'
-uri = 'uri'
+uri = 'mongodb+srv://USERNAME:PASSWORD@CLUSTER-URI/?retryWrites=true&w=majority'
 
 # Connect to the MongoDB Atlas cluster
 client = MongoClient(uri)
 
-# Create a collection object for your Reddit posts time-series data
+# Create a collection object for your posts time-series data
 collection = client[dbname][collectionname]
 
 # Create a collection object for the result
 sentiment_collection = client[dbname][sentiment_collectionname]
 
-# Define a function to perform sentiment analysis on a single Reddit post using TextBlob
+# Define a function to perform sentiment analysis on a single post using TextBlob
 def get_sentiment(text):
     if isinstance(text, str):
         blob = TextBlob(text)
         return blob.sentiment.polarity
     else:
-        return 0
+        return None
 
-# Get latest document _id to track new posts
-latest_doc_id = collection.find_one(sort=[('_id', pymongo.DESCENDING)])['_id']
+def process_posts(posts):
+    # Convert posts into a DataFrame
+    df = pd.DataFrame(posts)
 
-while True:
-    new_posts = list(collection.find({'_id': {'$gt': latest_doc_id}}))
-    
-    if new_posts:
-        latest_doc_id = new_posts[-1]['_id']
-
-        # Convert new_posts into a DataFrame
-        df = pd.DataFrame(new_posts)
-
-        # Apply the get_sentiment function to the title and description columns of the DataFrame to calculate the sentiment score for each Reddit post
+    # Apply the get_sentiment function to the title, description, and comments columns of the DataFrame to calculate the sentiment score for each post
+    if 'title' in df.columns:
         df['title_sentiment'] = df['title'].apply(get_sentiment)
+    if 'description' in df.columns:
         df['description_sentiment'] = df['description'].apply(get_sentiment)
-
-        # Check the type of the comments field
+    if 'comments' in df.columns:
         if df['comments'].apply(lambda x: isinstance(x, list)).all():
             # If the comments field contains a list of strings
-            df['comment_sentiment'] = df['comments'].apply(lambda comments: sum([get_sentiment(comment) for comment in comments])/len(comments) if comments else np.nan)
+            df['comment_sentiment'] = df['comments'].apply(lambda comments: sum([get_sentiment(comment) for comment in comments])/len(comments) if comments else None)
         else:
             # If the comments field contains something other than a list of strings
             df['comment_sentiment'] = None
 
-        # Merge the sentiment scores from the three columns and take the average
-        df['sentiment_score'] = df[['title_sentiment', 'description_sentiment', 'comment_sentiment']].mean(axis=1)
+    # Create a list of sentiment fields that actually exist
+    sentiment_fields = [field for field in ['title_sentiment', 'description_sentiment', 'comment_sentiment'] if field in df.columns]
 
-        # Add the authors to the DataFrame
-        df['authors'] = df['author'] + ', ' + df['comments'].apply(lambda comments: ', '.join(set([comment['author'] for comment in comments])) if comments else '')
+    # Merge the sentiment scores from the three columns and take the average
+    df['sentiment_score'] = df[sentiment_fields].mean(axis=1)
 
-        # Convert DataFrame to dictionary and write to the sentiment_collection
-        sentiment_collection.insert_many(df.to_dict('records'))
+    if 'author' in df.columns:
+        def process_comments(comments):
+            if isinstance(comments, list) and all(isinstance(comment, dict) and 'author' in comment for comment in comments):
+                return ', '.join(set([comment['author'] for comment in comments]))
+            else:
+                return ''
 
-        # Wait for a while before checking for new posts again
-        time.sleep(5)
+        df['authors'] = df['author'].apply(lambda x: str(x) if pd.notnull(x) else '') + ', ' + df['comments'].apply(process_comments)
+
+    # Convert DataFrame to dictionary and write to the sentiment_collection
+    sentiment_collection.insert_many(df.to_dict('records'))
+
+# Process all posts the first time
+all_posts = list(collection.find({}))
+process_posts(all_posts)
+
+# Get the latest document _id to track new posts
+latest_doc_id = all_posts[-1]['_id']
+
+while True:
+    # Get new posts
+    new_posts = list(collection.find({'_id': {'$gt': latest_doc_id}}))
+    
+    if new_posts:
+        # Update latest_doc_id with the _id of the latest document fetched
+        latest_doc_id = new_posts[-1]['_id']
+
+        # Process new posts
+        process_posts(new_posts)
+
+    # Wait for a while before checking for new posts again
+    time.sleep(5)
 
 client.close()
