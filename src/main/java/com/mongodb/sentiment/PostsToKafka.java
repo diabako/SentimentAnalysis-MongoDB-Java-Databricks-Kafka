@@ -29,7 +29,7 @@ import org.json.JSONObject;
 import org.json.JSONArray;
 
 public class PostsToKafka {
-
+    
     // Reddit API credentials
     private static final String clientId = "<REDDIT_CLIENT_ID>";
     private static final String clientSecret = "<REDDIT_CLIENT_SECRET>";
@@ -97,8 +97,9 @@ public class PostsToKafka {
                 postDoc.append("title", post.getTitle());
                 postDoc.append("author", post.getAuthor());
                 postDoc.append("score", post.getScore());
-                postDoc.append("permalink", post.getPermalink());
+                postDoc.append("link", post.getPermalink());
                 postDoc.append("url", post.getUrl());
+                postDoc.append("source", "reddit");
                 postDoc.append("description", post.getSelfText());
                 postDoc.append("created", new Date(post.getCreated().getTime()));
 
@@ -112,7 +113,7 @@ public class PostsToKafka {
                 byte[] postDocBytes = postDoc.toJson().getBytes(StandardCharsets.UTF_8);
 
                 // Send the BSON document to Kafka
-                kafkaProducer.send(new ProducerRecord<>("topic_3", postHash, postDocBytes));
+                kafkaProducer.send(new ProducerRecord<>("<KAFKA_TOPIC>", postHash, postDocBytes));
 
                 System.out.println("Stored post and comments: " + post.getTitle());
             }
@@ -154,7 +155,7 @@ public class PostsToKafka {
         for (String tag : tags) {
             try {
                 // Define the endpoint for fetching questions with the specified tag
-                String endpoint = "https://api.stackexchange.com/2.3/questions?order=desc&sort=activity&tagged=" + tag + "&site=stackoverflow";
+                String endpoint = "https://api.stackexchange.com/2.3/questions?order=desc&sort=activity&tagged=" + tag + "&site=stackoverflow&filter=withbody";
 
                 // Connect to the endpoint and get the JSON response
                 URL url = new URL(endpoint);
@@ -202,14 +203,16 @@ public class PostsToKafka {
                         Document postDoc = new Document();
                         postDoc.append("id", postId);
                         postDoc.append("title", post.getString("title"));
+                        postDoc.append("description", post.getString("body"));
                         postDoc.append("link", post.getString("link"));
+                        postDoc.append("source", "stackoverflow");
                         postDoc.append("created", new Date(post.getInt("creation_date") * 1000L)); // Convert UNIX timestamp to Date
 
                         // Convert Document to bytes
                         byte[] postDocBytes = postDoc.toJson().getBytes(StandardCharsets.UTF_8);
 
                         // Send the BSON document to Kafka
-                        kafkaProducer.send(new ProducerRecord<>("topic_3", postHash, postDocBytes));
+                        kafkaProducer.send(new ProducerRecord<>("<KAFKA_TOPIC>", postHash, postDocBytes));
 
                         System.out.println("Stored post: " + post.getString("title"));
                     }
@@ -226,4 +229,5 @@ public class PostsToKafka {
 
 
 }
+
 
