@@ -47,7 +47,7 @@ The code in PostToKafka.java shared in this git repository provides an example o
   <img width="1127" alt="Screenshot 2023-09-10 at 16 00 48" src="https://github.com/diabako/SentimentAnalysis-MongoDB-Java-Databricks-Kafka/assets/84781155/22ed8659-c8a6-4e7a-a0dc-a764ccfb7798">
    - Make sure to select the topic and provide the details of the Confluent Cloud cluster API configured in step 1
    - Configure connection string and database name
-  <img width="847" alt="Screenshot 2023-09-12 at 07 47 12" src="https://github.com/diabako/SentimentAnalysis-MongoDB-Java-Databricks-Kafka/assets/84781155/391112f3-1648-4f50-a0e1-1d42385ab9f6">
+ <img width="847" alt="Screenshot 2023-09-12 at 07 47 12" src="https://github.com/diabako/SentimentAnalysis-MongoDB-Java-Databricks-Kafka/assets/84781155/10e9d590-825a-4950-b257-81d0b1fbc3a3">
    - Make sure to update the configuration specific for time series collection adding the timefield details and the write strategy (I chose the insert one strategy to avoid some time series limitations I encountered before).
 <img width="919" alt="Screenshot 2023-09-10 at 16 19 30" src="https://github.com/diabako/SentimentAnalysis-MongoDB-Java-Databricks-Kafka/assets/84781155/7356dee9-9b39-4158-88bb-602eb188c0ec">
 
@@ -96,7 +96,6 @@ Key code samples are provided in the following files:
 
 - `PostsToKafka.java`: Fetches Reddit posts and StackOverflow posts and streams to Kafka 
 - `sentimentAnalysis.py`: Performs real-time sentiment analysis
-- 
 
 ### Visualizations 
 
