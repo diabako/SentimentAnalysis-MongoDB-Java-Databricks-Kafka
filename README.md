@@ -89,11 +89,10 @@ def get_sentiment(text):
 
 Use [MongoDB Atlas Charts](https://www.mongodb.com/products/charts) to visualize the sentiment analysis results. You can create various types of charts to understand the sentiment of the Reddit data over time. For example, in this project, we created a chart to visualize the average post-sentiment score over time. Here are the steps to build that chart:
 
-First, log in to MongoDB Atlas and navigate to your cluster.
-Click on the "Charts" button.
-If you haven't used Atlas Charts before, you might need to set it up first. Just follow the on-screen instructions to get started.
-
-To get you started faster, you will find a simplistic pre-defined dashboard with a few charts already built. You can follow these [steps](https://www.mongodb.com/blog/post/import-export-your-charts-dashboards#:~:text=To%20export%20a%20dashboard%2C%20simply,menu%20next%20to%20Add%20Dashboard.) to import that dashboard into your MongoDB Atlas project.
+- First, log in to MongoDB Atlas and navigate to your cluster.
+- Click on the "Charts" button.
+- If you haven't used Atlas Charts before, you might need to set it up first. Just follow the on-screen instructions to get started.
+- To get you started faster, you will find a simplistic pre-defined dashboard with a few charts already built. You can follow these [steps](https://www.mongodb.com/blog/post/import-export-your-charts-dashboards#:~:text=To%20export%20a%20dashboard%2C%20simply,menu%20next%20to%20Add%20Dashboard.) to import that dashboard into your MongoDB Atlas project.
 
 ### Code Samples
 
