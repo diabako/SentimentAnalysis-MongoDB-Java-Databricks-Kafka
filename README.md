@@ -1,4 +1,4 @@
-# [DRAFT] Leveraging MongoDB Atlas, Kafka Confluent Cloud, and Databricks To Perform Reddit and StackOverflow Posts Sentiment Analysis - Part 2
+# Leveraging MongoDB Atlas, Kafka Confluent Cloud, and Databricks To Perform Reddit and StackOverflow Posts Sentiment Analysis - Part 2
 
 ## Overview
 
