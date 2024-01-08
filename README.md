@@ -92,22 +92,14 @@ Use [MongoDB Atlas Charts](https://www.mongodb.com/products/charts) to visualize
 - First, log in to MongoDB Atlas and navigate to your cluster.
 - Click on the "Charts" button.
 - If you haven't used Atlas Charts before, you might need to set it up first. Just follow the on-screen instructions to get started.
-- To get you started faster, you will find a simplistic pre-defined dashboard with a few charts already built. You can follow these [steps](https://www.mongodb.com/blog/post/import-export-your-charts-dashboards#:~:text=To%20export%20a%20dashboard%2C%20simply,menu%20next%20to%20Add%20Dashboard.) to import that dashboard into your MongoDB Atlas project.
+- Follow the steps described [here](https://github.com/diabako/SentimentAnalysis-MongoDB-Java-Databricks?tab=readme-ov-file#10-visualize-sentiment-analysis-results) to build your first chart.
 
 ### Code Samples
 
 Key code samples are provided in the following files:
 
 - `PostsToKafka.java`: Fetches Reddit posts and StackOverflow posts and streams to Kafka 
-- `sentimentAnalysis.py`: Performs real-time sentiment analysis
-
-### Visualizations 
-
-The `dashboard.json` file contains a pre-configured dashboard with:
-
-- Sentiment score over time
-- Sentiment by source
-- Sentiment comparison between Reddit and analysis
+- `sentimentAnalysis.py`: Performs the sentiment analysis
 
 ## Resources
 
