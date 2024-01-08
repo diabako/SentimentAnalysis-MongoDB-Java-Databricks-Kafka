@@ -104,4 +104,3 @@ Key code samples are provided in the following files:
 ## Resources
 
 - [Part 1 of this project](https://github.com/diabako/SentimentAnalysis-MongoDB-Java-Databricks)
-- [Blog post for this project](https://www.example.com/blog)
